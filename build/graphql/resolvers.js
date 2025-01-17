@@ -25,10 +25,10 @@ exports.resolvers = {
                 return rows.length > 0 ? rows[0] : null;
             }
             catch (error) {
-                console.error("Error in fetching batsman stats:", error);
-                throw new Error("Failed to fetch batsman stats.");
+                console.error('Error in fetching batsman stats:', error);
+                throw new Error('Failed to fetch batsman stats.');
             }
-        }),
+        })
     },
     BatsmanStats: {
         batInfo: (batsman) => __awaiter(void 0, void 0, void 0, function* () {
@@ -37,56 +37,86 @@ exports.resolvers = {
                 return rows.length > 0 ? rows[0] : null;
             }
             catch (error) {
-                console.error("Error in fetching batsman stats:", error);
-                throw new Error("Failed to fetch batsman stats.");
+                console.error('Error in fetching batsman stats:', error);
+                throw new Error('Failed to fetch batsman stats.');
             }
-        }),
+        })
     },
     Query: {
         fetchAllRetiredBatsmanInfo: () => __awaiter(void 0, void 0, void 0, function* () { return yield BatsmanModel_1.userModel.fetchAllRetiredBatsmanInfo(); }),
         fetchBatsmanById: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { id }) { return yield BatsmanModel_1.userModel.fetchBatsmanById(id); }),
         fetchAverageOfABatsman: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { id }) { return yield BatsmanModel_1.userModel.fetchAverageOfABatsman(id); }),
-        fetchAllBatsman: () => __awaiter(void 0, void 0, void 0, function* () { return yield BatsmanModel_1.userModel.fetchAllBatsman(); }),
+        fetchAllBatsman: () => __awaiter(void 0, void 0, void 0, function* () { return yield BatsmanModel_1.userModel.fetchAllBatsman(); })
     },
     Mutation: {
         addBatsmanData: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { input }) {
             try {
-                // console.log(input);
                 const { firstName, lastName, age, isRetired } = input;
-                return yield BatsmanModel_1.userModel.addBatsmanData({ firstName, lastName, age, isRetired });
+                return yield BatsmanModel_1.userModel.addBatsmanData({
+                    firstName,
+                    lastName,
+                    age,
+                    isRetired
+                });
             }
             catch (err) {
-                throw new Error("Error Adding batsman data");
+                console.log(err);
+                throw new Error('Error Adding batsman data');
             }
         }),
         addBatsmanStats: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { input }) {
             try {
                 const { batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut } = input;
-                return yield BatsmanModel_1.userModel.addBatsmanStats({ batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut });
+                return yield BatsmanModel_1.userModel.addBatsmanStats({
+                    batsman_id,
+                    runs,
+                    highestScore,
+                    strikeRate,
+                    hundreds,
+                    fiftys,
+                    notOut
+                });
             }
             catch (err) {
-                throw new Error("Error Adding batsman stats");
+                console.log(err);
+                throw new Error('Error Adding batsman stats');
             }
         }),
         updatePlayerInfo: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { input }) {
             try {
                 const { id, firstName, lastName, isRetired, age } = input;
-                return yield BatsmanModel_1.userModel.updatePlayerInfo({ id, firstName, lastName, isRetired, age });
+                return yield BatsmanModel_1.userModel.updatePlayerInfo({
+                    id,
+                    firstName,
+                    lastName,
+                    isRetired,
+                    age
+                });
             }
             catch (err) {
-                throw new Error("Error Updating Player");
+                console.log(err);
+                throw new Error('Error Updating Player');
             }
         }),
         updateStats: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { input }) {
             try {
                 const { batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut } = input;
-                return yield BatsmanModel_1.userModel.updateStats({ batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut, });
+                return yield BatsmanModel_1.userModel.updateStats({
+                    batsman_id,
+                    runs,
+                    highestScore,
+                    strikeRate,
+                    hundreds,
+                    fiftys,
+                    notOut
+                });
             }
             catch (err) {
-                throw new Error("Error Updating Stats");
+                console.log(err);
+                throw new Error('Error Updating Stats');
             }
         }),
         softDelete: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { id }) { return yield BatsmanModel_1.userModel.softDelete(id); }),
-        hardDelete: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { id }) { return yield BatsmanModel_1.userModel.hardDelete(id); }),
-    },
+        hardDelete: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { id }) { return yield BatsmanModel_1.userModel.hardDelete(id); })
+    }
 };

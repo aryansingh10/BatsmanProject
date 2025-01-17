@@ -21,7 +21,10 @@ function init() {
     return __awaiter(this, void 0, void 0, function* () {
         const app = (0, express_1.default)();
         app.use(express_1.default.json());
-        const gqlServer = new server_1.ApolloServer({ typeDefs: schema_1.default, resolvers: resolvers_1.resolvers });
+        const gqlServer = new server_1.ApolloServer({
+            typeDefs: schema_1.default,
+            resolvers: resolvers_1.resolvers
+        });
         yield gqlServer.start();
         app.use('/graphql', (0, express4_1.expressMiddleware)(gqlServer));
         app.listen(3000, () => {

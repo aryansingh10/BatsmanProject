@@ -1,5 +1,5 @@
-import mysql, { createConnection } from 'mysql2/promise'
-import dotenv from  'dotenv'
+import mysql from 'mysql2/promise';
+import dotenv from  'dotenv';
 
 dotenv.config();
 
@@ -13,4 +13,4 @@ console.log(process.env.host);
   });
 
 
-  export default pool
+  export default pool;
