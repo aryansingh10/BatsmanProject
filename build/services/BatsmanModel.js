@@ -12,79 +12,78 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.userModel = void 0;
+exports.batsmanModel = void 0;
 const db_1 = __importDefault(require("../database/db"));
-const batsmanSchema_1 = require("../utils/batsmanSchema");
-const statsschema_1 = require("../utils/statsschema");
-exports.userModel = {
+const batsman_schema_1 = require("../inputValidation/batsman.schema");
+const stats_schema_1 = require("../inputValidation/stats.schema");
+const errors_1 = require("../errorhandling/errors");
+exports.batsmanModel = {
     fetchAllRetiredBatsmanInfo: () => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const [rows] = yield db_1.default.query(`
-            select * from batsmanData where isRetiered=1 `);
-            console.log(rows);
+            SELECT bd.*, bs.* 
+            FROM batsmanData AS bd 
+            LEFT JOIN batsmanStats AS bs 
+            ON bd.id = bs.batsman_id 
+            WHERE bd.isRetiered = 1;
+            `);
             return rows;
         }
-        catch (error) {
-            console.error('Error in fetchAllRetiredBatsmanInfo:', error);
-            throw new Error('Failed to fetch retired batsman data with stats.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch retired batsman data with stats'));
         }
     }),
     fetchBatsmanById: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const [rows] = yield db_1.default.query(`SELECT * from batsmanData where id =?`, [id]);
             if (!rows[0]) {
-                throw new Error(` Cannot find batsman with this id ${id}`);
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
             }
             return rows[0];
         }
-        catch (error) {
-            console.error('Error in fetchBatsmanById:', error);
-            throw new Error('Failed to fetch batsman data with stats.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch batsman data with stats'));
         }
     }),
     fetchAverageOfABatsman: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`Select runs/notout as average from batsmanStats where batsman_id = ?`, id);
-            console.log(typeof rows);
-            console.log(rows);
+            const [rows] = yield db_1.default.query(`SELECT runs / notout AS average from batsmanStats where batsman_id = ?`, [id]);
             if (!rows[0]) {
-                throw new Error(` Cannot find batsman with this id ${id}`);
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
             }
             return rows[0].average;
         }
-        catch (error) {
-            console.error('Error in fetchAverageOfABatsman:', error);
-            throw new Error('Failed to fetch batsman average data.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch batsman average data'));
         }
     }),
     fetchAllBatsman: () => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`select * from batsmanData`);
-            console.log(rows);
+            const [rows] = yield db_1.default.query(`SELECT * FROM batsmanData`);
             return rows;
         }
-        catch (error) {
-            console.error('Error in fetchAllBatsman:', error);
-            throw new Error('Failed to fetch all batsman data with stats.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch all batsman data with stats'));
         }
     }),
     addBatsmanData: (input) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const { firstName, lastName, isRetired, age } = input;
-            batsmanSchema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
+            batsman_schema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
             const [result] = yield db_1.default.query('INSERT INTO batsmanData (firstName, lastName, isRetiered, age) VALUES (?, ?, ?, ?)', [firstName, lastName, isRetired, age]);
-            console.log(result);
+            if (result.affectedRows === 0) {
+                throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman data'));
+            }
             return 'Player Added Successfully';
         }
-        catch (error) {
-            console.error('Error in addBatsmanData:', error);
-            throw new Error('Failed to add batsman data.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman data'));
         }
     }),
     addBatsmanStats: (input) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const { batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut } = input;
-            statsschema_1.statsSchema.parse({
+            stats_schema_1.statsSchema.parse({
                 batsman_id,
                 runs,
                 highestScore,
@@ -95,12 +94,12 @@ exports.userModel = {
             });
             const [batsmanRows] = yield db_1.default.query('SELECT * FROM batsmanData WHERE id = ?', [batsman_id]);
             if (batsmanRows.length === 0) {
-                throw new Error('Batsman not found.');
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', batsman_id));
             }
             const query = `
-        INSERT INTO batsmanStats (batsman_id, runs, highestScore,strikeRate, hundreds, fiftys, notOut) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
+                INSERT INTO batsmanStats (batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `;
             const values = [
                 batsman_id,
                 runs,
@@ -112,48 +111,46 @@ exports.userModel = {
             ];
             const [result] = yield db_1.default.query(query, values);
             if (result.affectedRows === 0) {
-                throw new Error('Failed to insert batsman stats.');
+                throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman stats'));
             }
             const [statsRows] = yield db_1.default.query('SELECT * FROM batsmanStats WHERE batsman_id = ?', [batsman_id]);
             if (statsRows.length === 0) {
-                throw new Error('Failed to fetch batsman stats after insertion.');
+                throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch batsman stats after insertion'));
             }
             return statsRows[0];
         }
-        catch (error) {
-            console.error('Error in addBatsmanStats:', error);
-            throw new Error('Failed to add batsman stats.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman stats'));
         }
     }),
     updatePlayerInfo: (input) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const { id, firstName, lastName, isRetired, age } = input;
-            batsmanSchema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
-            const [batsman] = yield db_1.default.query('SELECT * FROM batsmanData WHERE id = ?', [id]);
+            batsman_schema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
+            const [batsman] = yield db_1.default.query('SELECT * FROM batsmanData where id =? ', [id]);
             if (batsman.length === 0) {
-                throw new Error('Batsman not found.');
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
             }
             const query = `
-            UPDATE batsmanData 
-            SET firstName = ?, lastName = ?, isRetiered = ?, age = ? 
-            WHERE id = ?
-          `;
+                UPDATE batsmanData 
+                SET firstName = ?, lastName = ?, isRetiered = ?, age = ? 
+                WHERE id = ?
+            `;
             const values = [firstName, lastName, isRetired, age, id];
-            const result = yield db_1.default.query(query, values);
-            if (result.affectedRows === 0) {
-                throw new Error('No rows updated. Please check if the data has changed.');
+            const [result] = yield db_1.default.query(query, values);
+            if (result.changedRows === 0) {
+                return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
             }
             return 'Player Info Updated Successfully';
         }
-        catch (error) {
-            console.error('Error in updatePlayerInfo:', error);
-            throw new Error('Failed to update player information.');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.UPDATE_FAILED('player info'));
         }
     }),
     updateStats: (input) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const { batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut } = input;
-            statsschema_1.statsSchema.parse({
+            stats_schema_1.statsSchema.parse({
                 batsman_id,
                 runs,
                 highestScore,
@@ -164,12 +161,12 @@ exports.userModel = {
             });
             const [batsman] = yield db_1.default.query('SELECT * FROM batsmanStats WHERE batsman_id = ?', [batsman_id]);
             if (batsman.length === 0) {
-                throw new Error('Batsman not found.');
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman stats', batsman_id));
             }
             const query = `
-              UPDATE batsmanStats
-              SET runs = ?, highestScore = ?, strikeRate = ?, hundreds =?, fiftys = ?,notOut=? 
-              WHERE batsman_id = ?
+                UPDATE batsmanStats
+                SET runs = ?, highestScore = ?, strikeRate = ?, hundreds = ?, fiftys = ?, notOut = ? 
+                WHERE batsman_id = ?
             `;
             const values = [
                 runs,
@@ -182,44 +179,49 @@ exports.userModel = {
             ];
             const result = yield db_1.default.query(query, values);
             if (result.affectedRows === 0) {
-                throw new Error('No rows updated. Please check if the data has changed.');
+                return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
             }
             return 'Stats Updated Successfully';
         }
-        catch (error) {
-            console.error('Error in updatePlayerInfo:', error);
-            throw new Error('Failed to update player information');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.UPDATE_FAILED('player stats'));
         }
     }),
     softDelete: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`Select * from batsmanData where id = ?`, [id]);
-            console.log(rows);
+            const [rows] = yield db_1.default.query(`SELECT * FROM batsmanData WHERE id = ?`, [id]);
             const batsman = rows[0];
             if (!batsman) {
-                throw new Error('Batsman Not found');
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
             }
             if (batsman.is_deleted) {
-                throw new Error(`Batsman With this id ${id} alreeady deleted`);
+                return new Error(errors_1.ErrorMessages.ALREADY_DELETED('Batsman', id));
             }
-            const [result] = yield db_1.default.query(`Update batsmanData set is_deleted=true where is_deleted=false AND id=? `, id);
-            console.log(result);
-            return 'Soft deleted succesfully';
+            const [result] = yield db_1.default.query(`UPDATE batsmanData SET is_deleted = true WHERE is_deleted = false AND id = ?`, [id]);
+            if (result.affectedRows === 0) {
+                return new Error(errors_1.ErrorMessages.SOFT_DELETE_FAILED);
+            }
+            return 'Soft Deleted Successfully';
         }
-        catch (error) {
-            console.log(error);
-            throw new Error('Batsman Not Deleted');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.SOFT_DELETE_FAILED);
         }
     }),
     hardDelete: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [deletedBatsman] = yield db_1.default.query(`delete from batsmanData where id = ?`, id);
-            console.log(deletedBatsman);
-            return 'Batsman Deleted Successfullly';
+            const [rows] = yield db_1.default.query(`SELECT * FROM batsmanData WHERE id = ?`, [id]);
+            const batsman = rows[0];
+            if (!batsman) {
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
+            }
+            const [deletedBatsman] = yield db_1.default.query(`DELETE FROM batsmanData WHERE id = ?`, [id]);
+            if (deletedBatsman.afffectedRows === 0) {
+                return new Error(errors_1.ErrorMessages.HARD_DELETE_FAILED);
+            }
+            return 'Batsman Deleted Successfully';
         }
-        catch (err) {
-            console.log(err);
-            throw new Error('Not deleted successfully');
+        catch (_a) {
+            throw new Error(errors_1.ErrorMessages.HARD_DELETE_FAILED);
         }
     })
 };

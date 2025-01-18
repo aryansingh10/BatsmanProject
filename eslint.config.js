@@ -8,6 +8,7 @@ module.exports = [
     { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
     pluginJs.configs.recommended,
     ...tseslint.configs.recommended,
+
     {
         rules: {
             semi: 'error',
@@ -17,9 +18,14 @@ module.exports = [
             'no-unused-vars': 'error',
             'require-await': 'error',
             '@typescript-eslint/no-explicit-any': 'warn',
-            'no-console': 'error',
+            'no-console': 'warn',
+            camelcase: 'off'           
+        },
 
-            camelcase: 'warn'
-        }
+        ignores:["**/.build/"]
+        
+
+
+
     }
 ];

@@ -28,7 +28,6 @@ function init() {
         yield gqlServer.start();
         app.use('/graphql', (0, express4_1.expressMiddleware)(gqlServer));
         app.listen(3000, () => {
-            console.log('Server started on http://localhost:3000');
         });
     });
 }

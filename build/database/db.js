@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const promise_1 = __importDefault(require("mysql2/promise"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
-console.log(process.env.host);
 const pool = promise_1.default.createPool({
     host: process.env.host,
     user: process.env.user,

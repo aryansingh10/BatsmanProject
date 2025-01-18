@@ -1,156 +1,88 @@
 import pool from '../database/db';
-import { userModel } from '../models/BatsmanModel';
+import { batsmanModel } from '../services/BatsmanModel';
 import {
-   batsmanDataArgs,
-   batsmanStatsArgs,
-   batsmanupdateDataArgs
+    batsmanDataArgs,
+    batsmanStatsArgs,
+    batsmanupdateDataArgs
 } from '../interfaces/interfaces';
 
-import { Batsman, BatsmanStats } from '../types';
+import { Batsman, BatsmanStats } from '../interfaces/types';
 export const resolvers = {
-   BatsmanData: {
-      stats: async (batsman: Batsman): Promise<BatsmanStats | null> => {
-         try {
-            const [rows]: any = await pool.query(
-               `
-          SELECT * FROM batsmanStats WHERE batsman_id = ?;
-        `,
-               [batsman.id]
-            );
-            return rows.length > 0 ? rows[0] : null;
-         } catch (error) {
-            console.error('Error in fetching batsman stats:', error);
-            throw new Error('Failed to fetch batsman stats.');
-         }
-      }
-   },
+    //  BatsmanData: {
+    //      stats: async (batsman: Batsman): Promise<BatsmanStats | null> => {
+    //          try {
+    //              const [rows]: any = await pool.query(
+    //                  `
+    //         SELECT * FROM batsmanStats WHERE batsman_id = ?;
+    //       `,
+    //                  [batsman.id]
+    //              );
+    //              return rows.length > 0 ? rows[0] : null;
+    //          } catch {
+    //              throw new Error('Failed to fetch batsman stats.');
+    //          }
+    //      }
+    //  },
 
-   BatsmanStats: {
-      batInfo: async (batsman: any) => {
-         try {
-            const [rows]: any = await pool.query(
-               `SELECT * FROM batsmanData WHERE id= ?`,
-               [batsman.batsman_id]
-            );
+    BatsmanStats: {
+        batInfo: async (batsman: BatsmanStats): Promise<Batsman | null> => {
+            try {
+                const [rows]: any = await pool.query(
+                    `SELECT * FROM batsmanData WHERE id= ?`,
+                    [batsman.batsman_id]
+                );
 
-            return rows.length > 0 ? rows[0] : null;
-         } catch (error) {
-            console.error('Error in fetching batsman stats:', error);
-            throw new Error('Failed to fetch batsman stats.');
-         }
-      }
-   },
+                return rows.length > 0 ? rows[0] : null;
+            } catch {
+                throw new Error(`Failed to fetch batsman stats.`);
+            }
+        }
+    },
 
-   Query: {
-      fetchAllRetiredBatsmanInfo: async (): Promise<Batsman[]> =>
-         await userModel.fetchAllRetiredBatsmanInfo(),
+    Query: {
+        fetchAllRetiredBatsmanInfo: async (): Promise<Batsman[]> =>
+            await batsmanModel.fetchAllRetiredBatsmanInfo(),
 
-      fetchBatsmanById: async (_: string, { id }: { id: number }) =>
-         await userModel.fetchBatsmanById(id),
+        fetchBatsmanById: async (_: string, { id }: { id: number }) =>
+            await batsmanModel.fetchBatsmanById(id),
 
-      fetchAverageOfABatsman: async (_: number, { id }: { id: number }) =>
-         await userModel.fetchAverageOfABatsman(id),
+        fetchAverageOfABatsman: async (_: number, { id }: { id: number }) =>
+            await batsmanModel.fetchAverageOfABatsman(id),
 
-      fetchAllBatsman: async () => await userModel.fetchAllBatsman()
-   },
+        fetchAllBatsman: async () => await batsmanModel.fetchAllBatsman()
+    },
 
-   Mutation: {
-      addBatsmanData: async (_: any, { input }: { input: batsmanDataArgs }) => {
-         try {
-            const { firstName, lastName, age, isRetired } = input;
-            return await userModel.addBatsmanData({
-               firstName,
-               lastName,
-               age,
-               isRetired
-            });
-         } catch (err) {
-            console.log(err);
-            throw new Error('Error Adding batsman data');
-         }
-      },
+    Mutation: {
+        addBatsmanData: async (
+            _: string,
+            { input }: { input: batsmanDataArgs }
+        ) => {
+            return await batsmanModel.addBatsmanData(input);
+        },
+        addBatsmanStats: async (
+            _: string,
+            { input }: { input: batsmanStatsArgs }
+        ) => {
+            return await batsmanModel.addBatsmanStats(input);
+        },
 
-      addBatsmanStats: async (
-         _: any,
-         { input }: { input: batsmanStatsArgs }
-      ) => {
-         try {
-            const {
-               batsman_id,
-               runs,
-               highestScore,
-               strikeRate,
-               hundreds,   
-               fiftys,
-               notOut
-            } = input;
-            return await userModel.addBatsmanStats({
-               batsman_id,
-               runs,
-               highestScore,
-               strikeRate,
-               hundreds,
-               fiftys,
-               notOut
-            });
-         } catch (err) {
-            console.log(err);
+        updatePlayerInfo: async (
+            _: string,
+            { input }: { input: batsmanupdateDataArgs }
+        ) => {
+            return await batsmanModel.updatePlayerInfo(input);
+        },
 
-            throw new Error('Error Adding batsman stats');
-         }
-      },
+        updateStats: async (
+            _: string,
+            { input }: { input: batsmanStatsArgs }
+        ) => {
+            return await batsmanModel.updateStats(input);
+        },
 
-      updatePlayerInfo: async (
-         _: any,
-         { input }: { input: batsmanupdateDataArgs }
-      ) => {
-         try {
-            const { id, firstName, lastName, isRetired, age } = input;
-
-            return await userModel.updatePlayerInfo({
-               id,
-               firstName,
-               lastName,
-               isRetired,
-               age
-            });
-         } catch (err) {
-            console.log(err);
-
-            throw new Error('Error Updating Player');
-         }
-      },
-
-      updateStats: async (_: any, { input }: { input: batsmanStatsArgs }) => {
-         try {
-            const {
-               batsman_id,
-               runs,
-               highestScore,
-               strikeRate,
-               hundreds,
-               fiftys,
-               notOut
-            } = input;
-            return await userModel.updateStats({
-               batsman_id,
-               runs,
-               highestScore,
-               strikeRate,
-               hundreds,
-               fiftys,
-               notOut
-            });
-         } catch (err) {
-            console.log(err);
-
-            throw new Error('Error Updating Stats');
-         }
-      },
-
-      softDelete: async (_: any, { id }: { id: number }) =>
-         await userModel.softDelete(id),
-      hardDelete: async (_: any, { id }: { id: number }) =>
-         await userModel.hardDelete(id)
-   }
+        softDelete: async (_: string, { id }: { id: number }) =>
+            await batsmanModel.softDelete(id),
+        hardDelete: async (_: string, { id }: { id: number }) =>
+            await batsmanModel.hardDelete(id)
+    }
 };

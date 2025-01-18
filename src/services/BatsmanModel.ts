@@ -4,18 +4,28 @@ import {
     batsmanStatsArgs,
     batsmanupdateDataArgs
 } from '../interfaces/interfaces';
-import { batsManSchema } from '../utils/batsmanSchema';
-import { statsSchema } from '../utils/statsschema';
-export const userModel = {
+import { batsManSchema } from '../inputValidation/batsman.schema';
+import { statsSchema } from '../inputValidation/stats.schema';
+import { ErrorMessages } from '../errorhandling/errors';
+
+export const batsmanModel = {
     fetchAllRetiredBatsmanInfo: async () => {
         try {
             const [rows]: any = await pool.query(`
-            select * from batsmanData where isRetiered=1 `);
-            console.log(rows);
+            SELECT bd.*, bs.* 
+            FROM batsmanData AS bd 
+            LEFT JOIN batsmanStats AS bs 
+            ON bd.id = bs.batsman_id 
+            WHERE bd.isRetiered = 1;
+            `);
+
             return rows;
-        } catch (error) {
-            console.error('Error in fetchAllRetiredBatsmanInfo:', error);
-            throw new Error('Failed to fetch retired batsman data with stats.');
+        } catch {
+            throw new Error(
+                ErrorMessages.DATABASE_ERROR(
+                    'fetch retired batsman data with stats'
+                )
+            );
         }
     },
 
@@ -27,42 +37,43 @@ export const userModel = {
             );
 
             if (!rows[0]) {
-                throw new Error(` Cannot find batsman with this id ${id}`);
+                return new Error(ErrorMessages.NOT_FOUND('Batsman', id));
             }
             return rows[0];
-        } catch (error) {
-            console.error('Error in fetchBatsmanById:', error);
-            throw new Error('Failed to fetch batsman data with stats.');
+        } catch {
+            throw new Error(
+                ErrorMessages.DATABASE_ERROR('fetch batsman data with stats')
+            );
         }
     },
 
     fetchAverageOfABatsman: async (id: number) => {
         try {
             const [rows]: any = await pool.query(
-                `Select runs/notout as average from batsmanStats where batsman_id = ?`,
-                id
+                `SELECT runs / notout AS average from batsmanStats where batsman_id = ?`,
+                [id]
             );
-            console.log(typeof rows);
-            console.log(rows);
-
             if (!rows[0]) {
-                throw new Error(` Cannot find batsman with this id ${id}`);
+                return new Error(ErrorMessages.NOT_FOUND('Batsman', id));
             }
             return rows[0].average;
-        } catch (error) {
-            console.error('Error in fetchAverageOfABatsman:', error);
-            throw new Error('Failed to fetch batsman average data.');
+        } catch {
+            throw new Error(
+                ErrorMessages.DATABASE_ERROR('fetch batsman average data')
+            );
         }
     },
 
     fetchAllBatsman: async () => {
         try {
-            const [rows]: any = await pool.query(`select * from batsmanData`);
-            console.log(rows);
+            const [rows]: any = await pool.query(`SELECT * FROM batsmanData`);
             return rows;
-        } catch (error) {
-            console.error('Error in fetchAllBatsman:', error);
-            throw new Error('Failed to fetch all batsman data with stats.');
+        } catch {
+            throw new Error(
+                ErrorMessages.DATABASE_ERROR(
+                    'fetch all batsman data with stats'
+                )
+            );
         }
     },
 
@@ -75,12 +86,13 @@ export const userModel = {
                 'INSERT INTO batsmanData (firstName, lastName, isRetiered, age) VALUES (?, ?, ?, ?)',
                 [firstName, lastName, isRetired, age]
             );
-            console.log(result);
 
+            if (result.affectedRows === 0) {
+                throw new Error(ErrorMessages.INSERTION_FAILED('batsman data'));
+            }
             return 'Player Added Successfully';
-        } catch (error) {
-            console.error('Error in addBatsmanData:', error);
-            throw new Error('Failed to add batsman data.');
+        } catch {
+            throw new Error(ErrorMessages.INSERTION_FAILED('batsman data'));
         }
     },
 
@@ -111,12 +123,15 @@ export const userModel = {
             );
 
             if (batsmanRows.length === 0) {
-                throw new Error('Batsman not found.');
+                return new Error(
+                    ErrorMessages.NOT_FOUND('Batsman', batsman_id)
+                );
             }
+
             const query = `
-        INSERT INTO batsmanStats (batsman_id, runs, highestScore,strikeRate, hundreds, fiftys, notOut) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
+                INSERT INTO batsmanStats (batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `;
             const values = [
                 batsman_id,
                 runs,
@@ -129,7 +144,9 @@ export const userModel = {
             const [result]: any = await pool.query(query, values);
 
             if (result.affectedRows === 0) {
-                throw new Error('Failed to insert batsman stats.');
+                throw new Error(
+                    ErrorMessages.INSERTION_FAILED('batsman stats')
+                );
             }
 
             const [statsRows]: any = await pool.query(
@@ -139,14 +156,15 @@ export const userModel = {
 
             if (statsRows.length === 0) {
                 throw new Error(
-                    'Failed to fetch batsman stats after insertion.'
+                    ErrorMessages.DATABASE_ERROR(
+                        'fetch batsman stats after insertion'
+                    )
                 );
             }
 
             return statsRows[0];
-        } catch (error) {
-            console.error('Error in addBatsmanStats:', error);
-            throw new Error('Failed to add batsman stats.');
+        } catch {
+            throw new Error(ErrorMessages.INSERTION_FAILED('batsman stats'));
         }
     },
 
@@ -156,32 +174,30 @@ export const userModel = {
             batsManSchema.parse({ firstName, lastName, isRetired, age });
 
             const [batsman]: any = await pool.query(
-                'SELECT * FROM batsmanData WHERE id = ?',
+                'SELECT * FROM batsmanData where id =? ',
                 [id]
             );
 
             if (batsman.length === 0) {
-                throw new Error('Batsman not found.');
+                return new Error(ErrorMessages.NOT_FOUND('Batsman', id));
             }
 
             const query = `
-            UPDATE batsmanData 
-            SET firstName = ?, lastName = ?, isRetiered = ?, age = ? 
-            WHERE id = ?
-          `;
+                UPDATE batsmanData 
+                SET firstName = ?, lastName = ?, isRetiered = ?, age = ? 
+                WHERE id = ?
+            `;
             const values = [firstName, lastName, isRetired, age, id];
 
-            const result: any = await pool.query(query, values);
+            const [result]: any = await pool.query(query, values);
 
-            if (result.affectedRows === 0) {
-                throw new Error(
-                    'No rows updated. Please check if the data has changed.'
-                );
+            if (result.changedRows === 0) {
+                return new Error(ErrorMessages.NO_DATA_UPDATED);
             }
+
             return 'Player Info Updated Successfully';
-        } catch (error) {
-            console.error('Error in updatePlayerInfo:', error);
-            throw new Error('Failed to update player information.');
+        } catch {
+            throw new Error(ErrorMessages.UPDATE_FAILED('player info'));
         }
     },
 
@@ -205,19 +221,22 @@ export const userModel = {
                 fiftys,
                 notOut
             });
+
             const [batsman]: any = await pool.query(
                 'SELECT * FROM batsmanStats WHERE batsman_id = ?',
                 [batsman_id]
             );
 
             if (batsman.length === 0) {
-                throw new Error('Batsman not found.');
+                return new Error(
+                    ErrorMessages.NOT_FOUND('Batsman stats', batsman_id)
+                );
             }
 
             const query = `
-              UPDATE batsmanStats
-              SET runs = ?, highestScore = ?, strikeRate = ?, hundreds =?, fiftys = ?,notOut=? 
-              WHERE batsman_id = ?
+                UPDATE batsmanStats
+                SET runs = ?, highestScore = ?, strikeRate = ?, hundreds = ?, fiftys = ?, notOut = ? 
+                WHERE batsman_id = ?
             `;
             const values = [
                 runs,
@@ -232,59 +251,70 @@ export const userModel = {
             const result: any = await pool.query(query, values);
 
             if (result.affectedRows === 0) {
-                throw new Error(
-                    'No rows updated. Please check if the data has changed.'
-                );
+                return new Error(ErrorMessages.NO_DATA_UPDATED);
             }
 
             return 'Stats Updated Successfully';
-        } catch (error) {
-            console.error('Error in updatePlayerInfo:', error);
-            throw new Error('Failed to update player information');
+        } catch {
+            throw new Error(ErrorMessages.UPDATE_FAILED('player stats'));
         }
     },
 
     softDelete: async (id: number) => {
         try {
             const [rows]: any = await pool.query(
-                `Select * from batsmanData where id = ?`,
+                `SELECT * FROM batsmanData WHERE id = ?`,
                 [id]
             );
-            console.log(rows);
+
             const batsman = rows[0];
 
             if (!batsman) {
-                throw new Error('Batsman Not found');
+                return new Error(ErrorMessages.NOT_FOUND('Batsman', id));
             }
             if (batsman.is_deleted) {
-                throw new Error(`Batsman With this id ${id} alreeady deleted`);
+                return new Error(ErrorMessages.ALREADY_DELETED('Batsman', id));
             }
 
             const [result]: any = await pool.query(
-                `Update batsmanData set is_deleted=true where is_deleted=false AND id=? `,
-                id
+                `UPDATE batsmanData SET is_deleted = true WHERE is_deleted = false AND id = ?`,
+                [id]
             );
-            console.log(result);
 
-            return 'Soft deleted succesfully';
-        } catch (error) {
-            console.log(error);
-            throw new Error('Batsman Not Deleted');
+            if (result.affectedRows === 0) {
+                return new Error(ErrorMessages.SOFT_DELETE_FAILED);
+            }
+
+            return 'Soft Deleted Successfully';
+        } catch {
+            throw new Error(ErrorMessages.SOFT_DELETE_FAILED);
         }
     },
 
     hardDelete: async (id: number) => {
         try {
-            const [deletedBatsman]: any = await pool.query(
-                `delete from batsmanData where id = ?`,
-                id
+            const [rows]: any = await pool.query(
+                `SELECT * FROM batsmanData WHERE id = ?`,
+                [id]
             );
-            console.log(deletedBatsman);
 
-            return 'Batsman Deleted Successfullly';
-        } catch (err) {
-            console.log(err);
-            throw new Error('Not deleted successfully');
+            const batsman = rows[0];
+
+            if (!batsman) {
+                return new Error(ErrorMessages.NOT_FOUND('Batsman', id));
+            }
+
+            const [deletedBatsman]: any = await pool.query(
+                `DELETE FROM batsmanData WHERE id = ?`,
+                [id]
+            );
+
+            if (deletedBatsman.afffectedRows === 0) {
+                return new Error(ErrorMessages.HARD_DELETE_FAILED);
+            }
+            return 'Batsman Deleted Successfully';
+        } catch {
+            throw new Error(ErrorMessages.HARD_DELETE_FAILED);
         }
     }
 };
