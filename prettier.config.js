@@ -11,7 +11,7 @@ const config = {
     singleQuote: true,
     useTabs: false,
     endOfLine: 'auto',
-    printWidth: '160',
+    printWidth: 160,
     overrides: [
         {
             files: '*.json',

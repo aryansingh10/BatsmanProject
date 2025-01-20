@@ -4,11 +4,20 @@ const tseslint = require('typescript-eslint');
 
 /** @type {import('eslint').Linter.Config[]} */
 module.exports = [
-    { files: ['**/*.{js,mjs,cjs,ts}'] },
-    { languageOptions: { globals: { ...globals.browser, ...globals.node } } },
+    {
+        files: ['**/*.{js,mjs,cjs,ts}'],
+        ignores: ['**/build/']
+    },
+    {
+        languageOptions: {
+            globals: {
+                ...globals.browser,
+                ...globals.node
+            }
+        }
+    },
     pluginJs.configs.recommended,
     ...tseslint.configs.recommended,
-
     {
         rules: {
             semi: 'error',
@@ -19,13 +28,8 @@ module.exports = [
             'require-await': 'error',
             '@typescript-eslint/no-explicit-any': 'warn',
             'no-console': 'warn',
-            camelcase: 'off'           
-        },
-
-        ignores:["**/.build/"]
-        
-
-
-
+            camelcase: 'off',
+            eqeqeq: 'error'
+        }
     }
 ];

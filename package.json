@@ -10,6 +10,9 @@
       "lint:fix": "eslint 'src/**/*.{ts,js}' --fix",
       "format": "prettier src --write --ignore-unknown"
    },
+  "eslintConfig": {
+   "ignorePatterns":["**/build/**"]
+  },
    "author": "",
    "license": "ISC",
    "description": "",

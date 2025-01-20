@@ -64,7 +64,7 @@ const typeDefs = gql`
     type Mutation {
         addBatsmanData(input: batsmanDataArgs): String
 
-        addBatsmanStats(input: batsmanStatsArgs): BatsmanStats!
+        addBatsmanStats(input: batsmanStatsArgs): String
 
         updatePlayerInfo(input: batsmanupdateDataArgs): String
 
