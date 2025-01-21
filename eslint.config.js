@@ -26,7 +26,7 @@ module.exports = [
             'comma-dangle': 'warn',
             'no-unused-vars': 'error',
             'require-await': 'error',
-            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-explicit-any': 'error',
             'no-console': 'warn',
             camelcase: 'off',
             eqeqeq: 'error'

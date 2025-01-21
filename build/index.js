@@ -24,14 +24,13 @@ function init() {
         app.use(express_1.default.json());
         try {
             yield sequilize_1.default.authenticate();
-            console.log('Database connected successfully.');
+            // console.log('Database connected successfully.');
             yield sequilize_1.default.sync({ alter: true });
         }
-        catch (error) {
-            console.error('Unable to connect to the database:', error);
+        catch (_a) {
+            // console.error('Unable to connect to the database:');
             process.exit(1);
         }
-        // Apollo Server setup
         const gqlServer = new server_1.ApolloServer({
             typeDefs: schema_1.default,
             resolvers: resolvers_1.resolvers

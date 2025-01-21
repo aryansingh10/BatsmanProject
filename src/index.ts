@@ -11,14 +11,13 @@ async function init() {
     app.use(express.json());
     try {
         await sequelize.authenticate();
-        console.log('Database connected successfully.');
+        // console.log('Database connected successfully.');
         await sequelize.sync({ alter: true });
-    } catch (error) {
-        console.error('Unable to connect to the database:', error);
+    } catch {
+        // console.error('Unable to connect to the database:');
         process.exit(1);
     }
 
-    // Apollo Server setup
     const gqlServer = new ApolloServer({
         typeDefs,
         resolvers

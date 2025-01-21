@@ -76,8 +76,7 @@ exports.batsmanModel = {
             const { firstName, lastName, isRetired, age } = input;
             batsman_schema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
             const result = yield batsmanData_1.default.create({ firstName, lastName, isRetired, age });
-            console.log('106', result);
-            return 'Player Added Successfully';
+            return `Player Added Successfully with ID ${result.dataValues.id}`;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman data'));
@@ -96,8 +95,7 @@ exports.batsmanModel = {
                 notOut
             });
             const result = yield batsmanStats_1.default.create({ batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut });
-            console.log(result);
-            return 'Batsman Stats Added';
+            return `Batsman Stats Added for playerID ${result.dataValues.batsman_id}  `;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman stats'));

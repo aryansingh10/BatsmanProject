@@ -8,7 +8,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const sequelize = new sequelize_typescript_1.Sequelize({
     dialect: 'mysql',
-    host: 'localhost',
+    host: process.env.localhost,
     username: process.env.user,
     password: process.env.password,
     database: process.env.database,

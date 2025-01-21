@@ -65,9 +65,8 @@ export const batsmanModel = {
             batsManSchema.parse({ firstName, lastName, isRetired, age });
 
             const result = await BatsmanData.create({ firstName, lastName, isRetired, age });
-            console.log('106', result);
 
-            return 'Player Added Successfully';
+            return `Player Added Successfully with ID ${result.dataValues.id}`;
         } catch {
             throw new Error(ErrorMessages.INSERTION_FAILED('batsman data'));
         }
@@ -87,9 +86,8 @@ export const batsmanModel = {
             });
 
             const result = await BatsmanStats.create({ batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut });
-            console.log(result);
 
-            return 'Batsman Stats Added';
+            return `Batsman Stats Added for playerID ${result.dataValues.batsman_id}  `;
         } catch {
             throw new Error(ErrorMessages.INSERTION_FAILED('batsman stats'));
         }
