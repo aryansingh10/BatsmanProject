@@ -13,54 +13,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.batsmanModel = void 0;
-const db_1 = __importDefault(require("../database/db"));
 const batsman_schema_1 = require("../inputValidation/batsman.schema");
 const stats_schema_1 = require("../inputValidation/stats.schema");
 const errors_1 = require("../errorhandling/errors");
+const batsmanData_1 = __importDefault(require("../database/models/batsmanData"));
+const batsmanStats_1 = __importDefault(require("../database/models/batsmanStats"));
 exports.batsmanModel = {
     fetchAllRetiredBatsmanInfo: () => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`
-                SELECT bd.*,
-    JSON_OBJECT(
-        'batsman_id', bs.batsman_id,
-        'runs', bs.runs,
-        'highestScore', bs.highestScore,
-        'average', bs.average,
-        'strikeRate', bs.strikeRate,
-        'hundreds', bs.hundreds,
-        'fiftys', bs.fiftys,
-        'notOut', bs.notOut
-    ) AS stats
-FROM batsmanData AS bd
-LEFT JOIN batsmanStats AS bs 
-ON bd.id = bs.batsman_id
-WHERE bd.isRetiered = 1;
-
-            `);
-            console.log(rows);
-            // const mappedRows = rows.map((row: any) => ({
-            //     id: row.batsman_id,
-            //     firstName: row.firstName,
-            //     lastName: row.lastName,
-            //     age: row.age,
-            //     isRetired: row.isRetiered,
-            //     is_deleted: row.is_deleted,
-            //     stats: row.runs !== null
-            //         ? {
-            //               batsman_id: row.batsman_id,
-            //               runs: row.runs,
-            //               highestScore: row.highestScore,
-            //               average: row.runs / (row.notOut || 1),
-            //               strikeRate: row.strikeRate,
-            //               hundreds: row.hundreds,
-            //               fiftys: row.fiftys,
-            //               notOut: row.notOut
-            //           }
-            //         : null
-            // }));
-            // console.log('Mapped rows:', mappedRows);
-            return rows;
+            const batsmen = yield batsmanData_1.default.findAll({
+                where: { isRetired: true },
+                include: {
+                    model: batsmanStats_1.default,
+                    as: 'stats',
+                    required: false
+                }
+            });
+            return batsmen;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch retired batsman data with stats'));
@@ -68,11 +37,11 @@ WHERE bd.isRetiered = 1;
     }),
     fetchBatsmanById: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`SELECT * from batsmanData where id =?`, [id]);
-            if (!rows[0]) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
+            const batsman = yield batsmanData_1.default.findByPk(id);
+            if (!batsman) {
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('batsman', id));
             }
-            return rows[0];
+            return batsman;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch batsman data with stats'));
@@ -80,11 +49,8 @@ WHERE bd.isRetiered = 1;
     }),
     fetchAverageOfABatsman: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`SELECT runs / notout AS average from batsmanStats where batsman_id = ?`, [id]);
-            if (!rows[0]) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
-            }
-            return rows[0].average;
+            const batsman = yield batsmanStats_1.default.findOne({ where: { batsman_id: id } });
+            return batsman === null || batsman === void 0 ? void 0 : batsman.dataValues.average;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch batsman average data'));
@@ -92,8 +58,14 @@ WHERE bd.isRetiered = 1;
     }),
     fetchAllBatsman: () => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`SELECT * FROM batsmanData`);
-            return rows;
+            const result = yield batsmanData_1.default.findAll({
+                include: {
+                    model: batsmanStats_1.default,
+                    as: 'stats',
+                    required: false
+                }
+            });
+            return result;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch all batsman data with stats'));
@@ -103,15 +75,8 @@ WHERE bd.isRetiered = 1;
         try {
             const { firstName, lastName, isRetired, age } = input;
             batsman_schema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
-            const [result] = yield db_1.default.query('INSERT INTO batsmanData (firstName, lastName, isRetiered, age) VALUES (?, ?, ?, ?)', [
-                firstName,
-                lastName,
-                isRetired,
-                age
-            ]);
-            if (result.affectedRows === 0) {
-                throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman data'));
-            }
+            const result = yield batsmanData_1.default.create({ firstName, lastName, isRetired, age });
+            console.log('106', result);
             return 'Player Added Successfully';
         }
         catch (_a) {
@@ -130,19 +95,8 @@ WHERE bd.isRetiered = 1;
                 fiftys,
                 notOut
             });
-            const [batsmanRows] = yield db_1.default.query('SELECT * FROM batsmanData WHERE id = ?', [batsman_id]);
-            if (batsmanRows.length === 0) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', batsman_id));
-            }
-            const query = `
-                INSERT INTO batsmanStats (batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `;
-            const values = [batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut];
-            const [result] = yield db_1.default.query(query, values);
-            if (result.affectedRows === 0) {
-                throw new Error(errors_1.ErrorMessages.INSERTION_FAILED('batsman stats'));
-            }
+            const result = yield batsmanStats_1.default.create({ batsman_id, runs, highestScore, strikeRate, hundreds, fiftys, notOut });
+            console.log(result);
             return 'Batsman Stats Added';
         }
         catch (_a) {
@@ -153,18 +107,12 @@ WHERE bd.isRetiered = 1;
         try {
             const { id, firstName, lastName, isRetired, age } = input;
             batsman_schema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
-            const [batsman] = yield db_1.default.query('SELECT * FROM batsmanData where id =? ', [id]);
-            if (batsman.length === 0) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
-            }
-            const query = `
-                UPDATE batsmanData 
-                SET firstName = ?, lastName = ?, isRetiered = ?, age = ? 
-                WHERE id = ?
-            `;
-            const values = [firstName, lastName, isRetired, age, id];
-            const [result] = yield db_1.default.query(query, values);
-            if (result.changedRows === 0) {
+            const result = yield batsmanData_1.default.update({ firstName: firstName, lastName: lastName, isRetired: isRetired, age: age }, {
+                where: {
+                    id: id
+                }
+            });
+            if (result[0] === 0) {
                 return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
             }
             return 'Player Info Updated Successfully';
@@ -185,18 +133,12 @@ WHERE bd.isRetiered = 1;
                 fiftys,
                 notOut
             });
-            const [batsman] = yield db_1.default.query('SELECT * FROM batsmanStats WHERE batsman_id = ?', [batsman_id]);
-            if (batsman.length === 0) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman stats', batsman_id));
-            }
-            const query = `
-                UPDATE batsmanStats
-                SET runs = ?, highestScore = ?, strikeRate = ?, hundreds = ?, fiftys = ?, notOut = ? 
-                WHERE batsman_id = ?
-            `;
-            const values = [runs, highestScore, strikeRate, hundreds, fiftys, notOut, batsman_id];
-            const result = yield db_1.default.query(query, values);
-            if (result.affectedRows === 0) {
+            const result = yield batsmanStats_1.default.update({ runs: runs, highestScore: highestScore, strikeRate: strikeRate, hundreds: hundreds, fiftys: fiftys, notOut: notOut }, {
+                where: {
+                    batsman_id: batsman_id
+                }
+            });
+            if (result[0] === 0) {
                 return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
             }
             return 'Stats Updated Successfully';
@@ -207,17 +149,13 @@ WHERE bd.isRetiered = 1;
     }),
     softDelete: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`SELECT * FROM batsmanData WHERE id = ?`, [id]);
-            const batsman = rows[0];
-            if (!batsman) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
-            }
-            if (batsman.is_deleted) {
-                return new Error(errors_1.ErrorMessages.ALREADY_DELETED('Batsman', id));
-            }
-            const [result] = yield db_1.default.query(`UPDATE batsmanData SET is_deleted = true WHERE is_deleted = false AND id = ?`, [id]);
-            if (result.affectedRows === 0) {
-                return new Error(errors_1.ErrorMessages.SOFT_DELETE_FAILED);
+            const result = yield batsmanData_1.default.update({ is_deleted: true }, {
+                where: {
+                    id: id
+                }
+            });
+            if (result[0] === 0) {
+                return new Error(errors_1.ErrorMessages.ALREADY_DELETED('batsman', id));
             }
             return 'Soft Deleted Successfully';
         }
@@ -227,14 +165,9 @@ WHERE bd.isRetiered = 1;
     }),
     hardDelete: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const [rows] = yield db_1.default.query(`SELECT * FROM batsmanData WHERE id = ?`, [id]);
-            const batsman = rows[0];
-            if (!batsman) {
-                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
-            }
-            const [deletedBatsman] = yield db_1.default.query(`DELETE FROM batsmanData WHERE id = ?`, [id]);
-            if (deletedBatsman.afffectedRows === 0) {
-                return new Error(errors_1.ErrorMessages.HARD_DELETE_FAILED);
+            const deletedBatsman = yield batsmanData_1.default.destroy({ where: { id: id } });
+            if (deletedBatsman === 0) {
+                return new Error(errors_1.ErrorMessages.ALREADY_DELETED('batsman', id));
             }
             return 'Batsman Deleted Successfully';
         }

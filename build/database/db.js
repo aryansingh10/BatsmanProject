@@ -1,15 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const promise_1 = __importDefault(require("mysql2/promise"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
-const pool = promise_1.default.createPool({
-    host: process.env.host,
-    user: process.env.user,
-    password: process.env.password,
-    database: process.env.database
-});
-exports.default = pool;
+// import mysql from 'mysql2/promise';
+// import dotenv from 'dotenv';
+// dotenv.config();
+// const pool = mysql.createPool({
+//     host: process.env.host,
+//     user: process.env.user,
+//     password: process.env.password,
+//     database: process.env.database
+// });
+// export default pool;
