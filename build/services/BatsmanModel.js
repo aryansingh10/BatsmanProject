@@ -26,7 +26,7 @@ exports.batsmanModel = {
                 include: {
                     model: batsmanStats_1.default,
                     as: 'stats',
-                    required: false
+                    required: true // INNER JOIN IF FALSE IT WILL PERFORM  LEFT OUTERJOIN
                 }
             });
             return batsmen;
@@ -50,7 +50,7 @@ exports.batsmanModel = {
     fetchAverageOfABatsman: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
             const batsman = yield batsmanStats_1.default.findOne({ where: { batsman_id: id } });
-            return batsman === null || batsman === void 0 ? void 0 : batsman.dataValues.average;
+            return ` Average of batsman with ID ${id} is ${batsman === null || batsman === void 0 ? void 0 : batsman.dataValues.average}`;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.DATABASE_ERROR('fetch batsman average data'));
@@ -62,7 +62,7 @@ exports.batsmanModel = {
                 include: {
                     model: batsmanStats_1.default,
                     as: 'stats',
-                    required: false
+                    required: true
                 }
             });
             return result;
@@ -105,15 +105,25 @@ exports.batsmanModel = {
         try {
             const { id, firstName, lastName, isRetired, age } = input;
             batsman_schema_1.batsManSchema.parse({ firstName, lastName, isRetired, age });
-            const result = yield batsmanData_1.default.update({ firstName: firstName, lastName: lastName, isRetired: isRetired, age: age }, {
+            const batsman = yield batsmanData_1.default.findOne({
                 where: {
                     id: id
                 }
             });
-            if (result[0] === 0) {
-                return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
+            if (batsman !== null) {
+                const result = yield batsmanData_1.default.update({ firstName: firstName, lastName: lastName, isRetired: isRetired, age: age }, {
+                    where: {
+                        id: id
+                    }
+                });
+                if (result[0] === 0) {
+                    return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
+                }
+                return `Player Info Updated Successfully for batsman ID ${id}`;
             }
-            return 'Player Info Updated Successfully';
+            else {
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('batsman', id));
+            }
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.UPDATE_FAILED('player info'));
@@ -131,15 +141,25 @@ exports.batsmanModel = {
                 fiftys,
                 notOut
             });
-            const result = yield batsmanStats_1.default.update({ runs: runs, highestScore: highestScore, strikeRate: strikeRate, hundreds: hundreds, fiftys: fiftys, notOut: notOut }, {
+            const batsman = yield batsmanData_1.default.findOne({
                 where: {
-                    batsman_id: batsman_id
+                    id: batsman_id
                 }
             });
-            if (result[0] === 0) {
-                return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
+            if (batsman !== null) {
+                const result = yield batsmanStats_1.default.update({ runs: runs, highestScore: highestScore, strikeRate: strikeRate, hundreds: hundreds, fiftys: fiftys, notOut: notOut }, {
+                    where: {
+                        batsman_id: batsman_id
+                    }
+                });
+                if (result[0] === 0) {
+                    return new Error(errors_1.ErrorMessages.NO_DATA_UPDATED);
+                }
+                return `Stats Updated for Batsman ID ${batsman_id}`;
             }
-            return 'Stats Updated Successfully';
+            else {
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('batsman', batsman_id));
+            }
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.UPDATE_FAILED('player stats'));
@@ -147,15 +167,21 @@ exports.batsmanModel = {
     }),
     softDelete: (id) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            const result = yield batsmanData_1.default.update({ is_deleted: true }, {
-                where: {
-                    id: id
+            const batsman = yield batsmanData_1.default.findByPk(id);
+            if (batsman !== null) {
+                const result = yield batsmanData_1.default.update({ is_deleted: true }, {
+                    where: {
+                        id: id
+                    }
+                });
+                if (result[0] === 0) {
+                    return new Error(errors_1.ErrorMessages.ALREADY_DELETED('batsman', id));
                 }
-            });
-            if (result[0] === 0) {
-                return new Error(errors_1.ErrorMessages.ALREADY_DELETED('batsman', id));
+                return `Batsman with id ${id} Soft Deleted Successfully`;
             }
-            return 'Soft Deleted Successfully';
+            else {
+                return new Error(errors_1.ErrorMessages.NOT_FOUND('Batsman', id));
+            }
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.SOFT_DELETE_FAILED);
@@ -167,7 +193,7 @@ exports.batsmanModel = {
             if (deletedBatsman === 0) {
                 return new Error(errors_1.ErrorMessages.ALREADY_DELETED('batsman', id));
             }
-            return 'Batsman Deleted Successfully';
+            return `Batsman with ID ${id} deleted successfully `;
         }
         catch (_a) {
             throw new Error(errors_1.ErrorMessages.HARD_DELETE_FAILED);

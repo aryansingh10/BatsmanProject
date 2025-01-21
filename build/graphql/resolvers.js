@@ -11,7 +11,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resolvers = void 0;
 const BatsmanModel_1 = require("../services/BatsmanModel");
+const scalar_1 = require("./scalar/scalar");
 exports.resolvers = {
+    Date: scalar_1.dateScalar,
     Query: {
         fetchAllRetiredBatsmanInfo: () => __awaiter(void 0, void 0, void 0, function* () { return yield BatsmanModel_1.batsmanModel.fetchAllRetiredBatsmanInfo(); }),
         fetchBatsmanById: (_1, _a) => __awaiter(void 0, [_1, _a], void 0, function* (_, { id }) { return yield BatsmanModel_1.batsmanModel.fetchBatsmanById(id); }),

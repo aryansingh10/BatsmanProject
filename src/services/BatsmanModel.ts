@@ -13,7 +13,7 @@ export const batsmanModel = {
                 include: {
                     model: BatsmanStats,
                     as: 'stats',
-                    required: false
+                    required: true // INNER JOIN IF FALSE IT WILL PERFORM  LEFT OUTERJOIN
                 }
             });
 
@@ -38,7 +38,7 @@ export const batsmanModel = {
     fetchAverageOfABatsman: async (id: number) => {
         try {
             const batsman = await BatsmanStats.findOne({ where: { batsman_id: id } });
-            return batsman?.dataValues.average;
+            return ` Average of batsman with ID ${id} is ${batsman?.dataValues.average}`;
         } catch {
             throw new Error(ErrorMessages.DATABASE_ERROR('fetch batsman average data'));
         }
@@ -50,7 +50,7 @@ export const batsmanModel = {
                 include: {
                     model: BatsmanStats,
                     as: 'stats',
-                    required: false
+                    required: true
                 }
             });
             return result;
@@ -98,19 +98,29 @@ export const batsmanModel = {
             const { id, firstName, lastName, isRetired, age } = input;
             batsManSchema.parse({ firstName, lastName, isRetired, age });
 
-            const result = await BatsmanData.update(
-                { firstName: firstName, lastName: lastName, isRetired: isRetired, age: age },
-                {
-                    where: {
-                        id: id
-                    }
+            const batsman = await BatsmanData.findOne({
+                where: {
+                    id: id
                 }
-            );
+            });
 
-            if (result[0] === 0) {
-                return new Error(ErrorMessages.NO_DATA_UPDATED);
+            if (batsman !== null) {
+                const result = await BatsmanData.update(
+                    { firstName: firstName, lastName: lastName, isRetired: isRetired, age: age },
+                    {
+                        where: {
+                            id: id
+                        }
+                    }
+                );
+
+                if (result[0] === 0) {
+                    return new Error(ErrorMessages.NO_DATA_UPDATED);
+                }
+                return `Player Info Updated Successfully for batsman ID ${id}`;
+            } else {
+                return new Error(ErrorMessages.NOT_FOUND('batsman', id));
             }
-            return 'Player Info Updated Successfully';
         } catch {
             throw new Error(ErrorMessages.UPDATE_FAILED('player info'));
         }
@@ -128,19 +138,31 @@ export const batsmanModel = {
                 fiftys,
                 notOut
             });
-            const result = await BatsmanStats.update(
-                { runs: runs, highestScore: highestScore, strikeRate: strikeRate, hundreds: hundreds, fiftys: fiftys, notOut: notOut },
-                {
-                    where: {
-                        batsman_id: batsman_id
-                    }
-                }
-            );
 
-            if (result[0] === 0) {
-                return new Error(ErrorMessages.NO_DATA_UPDATED);
+            const batsman = await BatsmanData.findOne({
+                where: {
+                    id: batsman_id
+                }
+            });
+
+            if (batsman !== null) {
+                const result = await BatsmanStats.update(
+                    { runs: runs, highestScore: highestScore, strikeRate: strikeRate, hundreds: hundreds, fiftys: fiftys, notOut: notOut },
+                    {
+                        where: {
+                            batsman_id: batsman_id
+                        }
+                    }
+                );
+
+                if (result[0] === 0) {
+                    return new Error(ErrorMessages.NO_DATA_UPDATED);
+                }
+
+                return `Stats Updated for Batsman ID ${batsman_id}`;
+            } else {
+                return new Error(ErrorMessages.NOT_FOUND('batsman', batsman_id));
             }
-            return 'Stats Updated Successfully';
         } catch {
             throw new Error(ErrorMessages.UPDATE_FAILED('player stats'));
         }
@@ -148,20 +170,26 @@ export const batsmanModel = {
 
     softDelete: async (id: number) => {
         try {
-            const result = await BatsmanData.update(
-                { is_deleted: true },
-                {
-                    where: {
-                        id: id
+            const batsman = await BatsmanData.findByPk(id);
+
+            if (batsman !== null) {
+                const result = await BatsmanData.update(
+                    { is_deleted: true },
+                    {
+                        where: {
+                            id: id
+                        }
                     }
+                );
+
+                if (result[0] === 0) {
+                    return new Error(ErrorMessages.ALREADY_DELETED('batsman', id));
                 }
-            );
 
-            if (result[0] === 0) {
-                return new Error(ErrorMessages.ALREADY_DELETED('batsman', id));
+                return `Batsman with id ${id} Soft Deleted Successfully`;
+            } else {
+                return new Error(ErrorMessages.NOT_FOUND('Batsman', id));
             }
-
-            return 'Soft Deleted Successfully';
         } catch {
             throw new Error(ErrorMessages.SOFT_DELETE_FAILED);
         }
@@ -174,7 +202,7 @@ export const batsmanModel = {
                 return new Error(ErrorMessages.ALREADY_DELETED('batsman', id));
             }
 
-            return 'Batsman Deleted Successfully';
+            return `Batsman with ID ${id} deleted successfully `;
         } catch {
             throw new Error(ErrorMessages.HARD_DELETE_FAILED);
         }

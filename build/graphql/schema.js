@@ -2,14 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const apollo_server_express_1 = require("apollo-server-express");
 const typeDefs = (0, apollo_server_express_1.gql) `
+    scalar Date
     type BatsmanData {
         id: Int
         firstName: String
         lastName: String!
         age: Int!
         isRetired: Boolean
-        createdAt: String
-        updatedAt: String
+        created_at: Date!
+        updated_at: Date!
         is_deleted: Boolean
         stats: BatsmanStats
     }
@@ -24,8 +25,8 @@ const typeDefs = (0, apollo_server_express_1.gql) `
         hundreds: Int
         fiftys: Int
         notOut: Int
-        createdAt: String
-        updatedAt: String
+        created_at: String
+        updated_at: String
     }
 
     input batsmanDataArgs {
@@ -57,9 +58,9 @@ const typeDefs = (0, apollo_server_express_1.gql) `
 
         fetchBatsmanById(id: Int!): BatsmanData
 
-        fetchAverageOfABatsman(id: Int!): Float
+        fetchAverageOfABatsman(id: Int!): String
 
-        fetchAllBatsman: [BatsmanData]!
+        fetchAllBatsman: [BatsmanData]
     }
 
     type Mutation {

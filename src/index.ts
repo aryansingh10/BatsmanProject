@@ -22,13 +22,12 @@ async function init() {
         typeDefs,
         resolvers
     });
-
     await gqlServer.start();
 
     app.use('/graphql', expressMiddleware(gqlServer) as unknown as express.RequestHandler);
 
     app.listen(3000, () => {
-        console.log('Server started on http://localhost:3000/graphql');
+        // console.log('Server started on http://localhost:3000/graphql');
     });
 }
 

@@ -1,7 +1,11 @@
 import { batsmanModel } from '../services/BatsmanModel';
 import { batsmanDataArgs, batsmanStatsArgs, batsmanupdateDataArgs } from '../interfaces/interfaces';
 
+import { dateScalar } from './scalar/scalar';
+
 export const resolvers = {
+    Date: dateScalar,
+
     Query: {
         fetchAllRetiredBatsmanInfo: async () => await batsmanModel.fetchAllRetiredBatsmanInfo(),
         fetchBatsmanById: async (_: string, { id }: { id: number }) => await batsmanModel.fetchBatsmanById(id),
